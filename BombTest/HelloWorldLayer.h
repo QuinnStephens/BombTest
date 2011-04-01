@@ -11,17 +11,22 @@
 #import "cocos2d.h"
 #import "Box2D.h"
 #import "GLES-Render.h"
+#import "MyContactListener.h"
 
 // HelloWorldLayer
 @interface HelloWorldLayer : CCLayer
 {
 	b2World* world;
 	GLESDebugDraw *m_debugDraw;
+    MyContactListener *contactListener;
+    b2Fixture *thisBomb;
 }
 
 // returns a CCScene that contains the HelloWorldLayer as the only child
 +(CCScene *) scene;
-// adds a new sprite at a given coordinate
--(void) addNewSpriteWithCoords:(CGPoint)p;
+
+-(void) dropBomb:(CGPoint)p;
+
+-(void) createAssortedShapes;
 
 @end

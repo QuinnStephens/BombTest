@@ -111,19 +111,11 @@ enum {
 		// right
 		groundBox.SetAsEdge(b2Vec2(screenSize.width/PTM_RATIO,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width/PTM_RATIO,0));
 		groundBody->CreateFixture(&groundBox,0);
+        
+        contactListener = new MyContactListener();
+        world->SetContactListener(contactListener);
 		
-		
-		//Set up sprite
-		
-		CCSpriteBatchNode *batch = [CCSpriteBatchNode batchNodeWithFile:@"blocks.png" capacity:150];
-		[self addChild:batch z:0 tag:kTagBatchNode];
-		
-		[self addNewSpriteWithCoords:ccp(screenSize.width/2, screenSize.height/2)];
-		
-		CCLabelTTF *label = [CCLabelTTF labelWithString:@"Tap screen" fontName:@"Marker Felt" fontSize:32];
-		[self addChild:label z:0];
-		[label setColor:ccc3(0,0,255)];
-		label.position = ccp( screenSize.width/2, screenSize.height-50);
+        [self createAssortedShapes];
 		
 		[self schedule: @selector(tick:)];
 	}
@@ -148,39 +140,99 @@ enum {
 
 }
 
--(void) addNewSpriteWithCoords:(CGPoint)p
-{
-	CCLOG(@"Add sprite %0.2f x %02.f",p.x,p.y);
-	CCSpriteBatchNode *batch = (CCSpriteBatchNode*) [self getChildByTag:kTagBatchNode];
-	
-	//We have a 64x64 sprite sheet with 4 different 32x32 images.  The following code is
-	//just randomly picking one of the images
-	int idx = (CCRANDOM_0_1() > .5 ? 0:1);
-	int idy = (CCRANDOM_0_1() > .5 ? 0:1);
-	CCSprite *sprite = [CCSprite spriteWithBatchNode:batch rect:CGRectMake(32 * idx,32 * idy,32,32)];
-	[batch addChild:sprite];
-	
-	sprite.position = ccp( p.x, p.y);
-	
-	// Define the dynamic body.
-	//Set up a 1m squared box in the physics world
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
+-(void) createAssortedShapes{
+    int numShapes = 15;
+    for (int i = 0; i < numShapes; i++){
+        b2BodyDef bodyDef;
+        bodyDef.type = b2_dynamicBody;
+        
+        // Define another box shape for our dynamic body.
+        b2PolygonShape dynamicBox;
+        dynamicBox.SetAsBox(.5f, .5f);//These are mid points for our 1m box
+        
+        bodyDef.position.Set((CCRANDOM_0_1() * 640) / PTM_RATIO, (CCRANDOM_0_1() * 100) / PTM_RATIO);
+        // Define the dynamic body fixture.
+        b2FixtureDef fixtureDef;
+        fixtureDef.shape = &dynamicBox;	
+        fixtureDef.density = 1.0f;
+        fixtureDef.friction = 0.3f;
+        b2Body *body = world->CreateBody(&bodyDef);
+        body->CreateFixture(&fixtureDef);
+        
+    }
+}
 
-	bodyDef.position.Set(p.x/PTM_RATIO, p.y/PTM_RATIO);
-	bodyDef.userData = sprite;
-	b2Body *body = world->CreateBody(&bodyDef);
+-(void) dropBomb:(CGPoint)p
+{
 	
-	// Define another box shape for our dynamic body.
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(.5f, .5f);//These are mid points for our 1m box
-	
-	// Define the dynamic body fixture.
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;	
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 0.3f;
-	body->CreateFixture(&fixtureDef);
+	b2BodyDef bodyDef;
+    b2Body *body;
+	bodyDef.type = b2_dynamicBody;
+    
+    b2CircleShape circle;
+    circle.m_radius = (CCRANDOM_0_1() * 5 + 10.0)/PTM_RATIO;
+    
+    b2FixtureDef fd;
+    fd.shape = &circle;
+    fd.density = 1.0f;
+    fd.friction = 0.1f;
+    fd.restitution = 0.5f;
+    bodyDef.position.Set(p.x/PTM_RATIO, p.y/PTM_RATIO);
+    body = world->CreateBody(&bodyDef);
+    thisBomb = body->CreateFixture(&fd);
+
+}
+
+// Pos comes from the ccTouchesEnded function. I've already converted it to Cocos2D coordinates.
+-(void) launchBomb:(b2Vec2) b2TouchPosition
+{
+	BOOL doSuction = NO; // Very cool looking implosion effect instead of explosion.
+    
+    //In Box2D the bodies are a linked list, so keep getting the next one until it doesn't exist.
+	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
+	{
+        //Box2D uses meters, there's 32 pixels in one meter. PTM_RATIO is defined somewhere in the class.
+		//b2Vec2 b2TouchPosition = b2Vec2(pos.x/PTM_RATIO, pos.y/PTM_RATIO);
+		b2Vec2 b2BodyPosition = b2Vec2(b->GetPosition().x, b->GetPosition().y);
+        
+        //Don't forget any measurements always need to take PTM_RATIO into account
+		float maxDistance = 9; // In your head don't forget this number is low because we're multiplying it by 32 pixels;
+		int maxForce = 2000;
+		CGFloat distance; // Why do i want to use CGFloat vs float - I'm not sure, but this mixing seems to work fine for this little test.
+		CGFloat strength;
+		float force;
+		CGFloat angle;
+        
+		if(doSuction) // To go towards the press, all we really change is the atanf function, and swap which goes first to reverse the angle
+		{
+			// Get the distance, and cap it
+			distance = b2Distance(b2BodyPosition, b2TouchPosition);
+			if(distance > maxDistance) distance = maxDistance - 0.01;
+			// Get the strength
+			//strength = distance / maxDistance; // Uncomment and reverse these two. and ones further away will get more force instead of less
+			strength = (maxDistance - distance) / maxDistance; // This makes it so that the closer something is - the stronger, instead of further
+			force  = strength * maxForce;
+            
+			// Get the angle
+			angle = atan2f(b2TouchPosition.y - b2BodyPosition.y, b2TouchPosition.x - b2BodyPosition.x);
+			//NSLog(@" distance:%0.2f,force:%0.2f", distance, force);
+			// Apply an impulse to the body, using the angle
+			b->ApplyForce(b2Vec2(cosf(angle) * force, sinf(angle) * force), b->GetPosition());
+		}
+		else
+		{
+			distance = b2Distance(b2BodyPosition, b2TouchPosition);
+			if(distance > maxDistance) distance = maxDistance - 0.01;
+            
+			// Normally if distance is max distance, it'll have the most strength, this makes it so the opposite is true - closer = stronger
+			strength = (maxDistance - distance) / maxDistance; // This makes it so that the closer something is - the stronger, instead of further
+			force = strength * maxForce;
+			angle = atan2f(b2BodyPosition.y - b2TouchPosition.y, b2BodyPosition.x - b2TouchPosition.x);
+			//NSLog(@" distance:%0.2f,force:%0.2f,angle:%0.2f", distance, force, angle);
+			// Apply an impulse to the body, using the angle
+			b->ApplyForce(b2Vec2(cosf(angle) * force, sinf(angle) * force), b->GetPosition());
+		}
+	}
 }
 
 
@@ -204,12 +256,35 @@ enum {
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
 		if (b->GetUserData() != NULL) {
-			//Synchronize the AtlasSprites position and rotation with the corresponding body
-			CCSprite *myActor = (CCSprite*)b->GetUserData();
-			myActor.position = CGPointMake( b->GetPosition().x * PTM_RATIO, b->GetPosition().y * PTM_RATIO);
-			myActor.rotation = -1 * CC_RADIANS_TO_DEGREES(b->GetAngle());
+			
 		}	
 	}
+    std::vector<b2Body *>toDestroy;
+    std::vector<MyContact>::iterator pos;
+    for(pos = contactListener->_contacts.begin(); 
+        pos != contactListener->_contacts.end(); ++pos) {
+            MyContact contact = *pos;
+        
+        if (contact.fixtureA == thisBomb || contact.fixtureB == thisBomb){
+            NSLog(@"Boom!");
+            b2Body *bombBody = thisBomb->GetBody();
+            [self launchBomb:bombBody->GetPosition()];
+            
+            //thisBomb = nil;
+            toDestroy.push_back(bombBody);
+            
+        }
+    }
+    
+    std::vector<b2Body *>::iterator pos2;
+    for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
+        b2Body *b = *pos2;     
+        if (b->GetUserData() != NULL) {
+            CCSprite *sprite = (CCSprite *) b->GetUserData();
+            [self removeChild:sprite cleanup:YES];
+        }
+        world->DestroyBody(b);
+    }
 }
 
 - (void)ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
@@ -220,7 +295,8 @@ enum {
 		
 		location = [[CCDirector sharedDirector] convertToGL: location];
 		
-		[self addNewSpriteWithCoords: location];
+		[self dropBomb: location];
+        //[self launchBomb:location];
 	}
 }
 
