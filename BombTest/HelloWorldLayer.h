@@ -19,7 +19,15 @@
 	b2World* world;
 	GLESDebugDraw *m_debugDraw;
     MyContactListener *contactListener;
-    b2Fixture *thisBomb;
+    //b2Fixture *thisBomb;
+    NSMutableArray *allBombs;
+    
+    CCLayer *objectsLayer;
+    
+    // Input
+	CGPoint panPoint;
+	float zoom;
+	float originalZoom;
 }
 
 // returns a CCScene that contains the HelloWorldLayer as the only child

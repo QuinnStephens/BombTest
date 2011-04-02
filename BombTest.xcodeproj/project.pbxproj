@@ -162,6 +162,7 @@
 		E43BB17813453CD100360F86 /* GLES-Render.mm in Sources */ = {isa = PBXBuildFile; fileRef = E43BB17713453CD100360F86 /* GLES-Render.mm */; };
 		E43BB17B13453CD100360F86 /* blocks.png in Resources */ = {isa = PBXBuildFile; fileRef = E43BB17A13453CD100360F86 /* blocks.png */; };
 		E43BB188134545B900360F86 /* MyContactListener.mm in Sources */ = {isa = PBXBuildFile; fileRef = E43BB187134545B900360F86 /* MyContactListener.mm */; };
+		E47BB19113477AD400F10782 /* b2Object.mm in Sources */ = {isa = PBXBuildFile; fileRef = E47BB19013477AD400F10782 /* b2Object.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -474,8 +475,10 @@
 		E43BB17713453CD100360F86 /* GLES-Render.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "GLES-Render.mm"; sourceTree = "<group>"; };
 		E43BB17913453CD100360F86 /* GameConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GameConfig.h; sourceTree = "<group>"; };
 		E43BB17A13453CD100360F86 /* blocks.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blocks.png; path = Resources/blocks.png; sourceTree = "<group>"; };
-		E43BB186134545B900360F86 /* MyContactListener.h */ = {isa = PBXFileReference; fileEncoding = 4; path = MyContactListener.h; sourceTree = "<group>"; };
+		E43BB186134545B900360F86 /* MyContactListener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyContactListener.h; sourceTree = "<group>"; };
 		E43BB187134545B900360F86 /* MyContactListener.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MyContactListener.mm; sourceTree = "<group>"; };
+		E47BB18F13477AD400F10782 /* b2Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = b2Object.h; sourceTree = "<group>"; };
+		E47BB19013477AD400F10782 /* b2Object.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = b2Object.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -534,6 +537,8 @@
 			children = (
 				E43BB16D13453CD100360F86 /* AppDelegate.h */,
 				E43BB186134545B900360F86 /* MyContactListener.h */,
+				E47BB18F13477AD400F10782 /* b2Object.h */,
+				E47BB19013477AD400F10782 /* b2Object.mm */,
 				E43BB187134545B900360F86 /* MyContactListener.mm */,
 				E43BB16E13453CD100360F86 /* AppDelegate.mm */,
 				E43BB17013453CD100360F86 /* RootViewController.h */,
@@ -1106,6 +1111,7 @@
 				E43BB17513453CD100360F86 /* HelloWorldLayer.mm in Sources */,
 				E43BB17813453CD100360F86 /* GLES-Render.mm in Sources */,
 				E43BB188134545B900360F86 /* MyContactListener.mm in Sources */,
+				E47BB19113477AD400F10782 /* b2Object.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1161,7 +1167,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 4.2;
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = BombTest/libs;
 				WRAPPER_EXTENSION = app;
 			};
@@ -1179,7 +1185,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 4.2;
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = BombTest/libs;
 				VALIDATE_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;

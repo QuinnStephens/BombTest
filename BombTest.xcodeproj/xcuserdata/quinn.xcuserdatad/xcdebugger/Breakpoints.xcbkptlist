@@ -9,12 +9,26 @@
          continueAfterRunningActions = "No"
          isPathRelative = "1"
          filePath = "BombTest/HelloWorldLayer.mm"
-         timestampString = "323307851.081374"
+         timestampString = "323456675.573177"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
-         startingLineNumber = "220"
-         endingLineNumber = "220"
+         startingLineNumber = "236"
+         endingLineNumber = "236"
          landmarkName = "-launchBomb:"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         isPathRelative = "1"
+         filePath = "BombTest/HelloWorldLayer.mm"
+         timestampString = "323456675.573177"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "199"
+         endingLineNumber = "199"
+         landmarkName = "-dropBomb:"
          landmarkType = "5">
       </FileBreakpoint>
    </FileBreakpoints>

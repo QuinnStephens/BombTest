@@ -91,6 +91,19 @@
 	
 	[director setAnimationInterval:1.0/60];
 	[director setDisplayFPS:YES];
+    /*
+    // Gesture recognizers
+	UIPinchGestureRecognizer *pinchRecognizer = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(recognizedPinch:)];
+	[window addGestureRecognizer:pinchRecognizer];
+	[pinchRecognizer release];
+	
+	UIPinchGestureRecognizer *panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(recognizedPan:)];
+	[window addGestureRecognizer:panRecognizer];
+	[panRecognizer release];
+	
+	UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(recognizedTap:)];
+	[window addGestureRecognizer:tapRecognizer];
+	[tapRecognizer release];*/
 	
 	
 	// make the OpenGLView a child of the view controller

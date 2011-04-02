@@ -21,6 +21,7 @@ enum {
 	kTagTileMap = 1,
 	kTagBatchNode = 1,
 	kTagAnimation1 = 1,
+    kTagBomb = 2,
 };
 
 
@@ -87,6 +88,8 @@ enum {
 		// Define the ground body.
 		b2BodyDef groundBodyDef;
 		groundBodyDef.position.Set(0, 0); // bottom-left corner
+        NSString *groundString  = @"ground";
+        groundBodyDef.userData = groundString;
 		
 		// Call the body factory which allocates memory for the ground body
 		// from a pool and creates the ground box shape (also from a pool).
@@ -97,11 +100,11 @@ enum {
 		b2PolygonShape groundBox;		
 		
 		// bottom
-		groundBox.SetAsEdge(b2Vec2(0,0), b2Vec2(screenSize.width/PTM_RATIO,0));
+		groundBox.SetAsEdge(b2Vec2(0,0), b2Vec2(screenSize.width * 2 /PTM_RATIO,0));
 		groundBody->CreateFixture(&groundBox,0);
 		
 		// top
-		groundBox.SetAsEdge(b2Vec2(0,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width/PTM_RATIO,screenSize.height/PTM_RATIO));
+		groundBox.SetAsEdge(b2Vec2(0,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width * 2/PTM_RATIO,screenSize.height/PTM_RATIO));
 		groundBody->CreateFixture(&groundBox,0);
 		
 		// left
@@ -109,11 +112,16 @@ enum {
 		groundBody->CreateFixture(&groundBox,0);
 		
 		// right
-		groundBox.SetAsEdge(b2Vec2(screenSize.width/PTM_RATIO,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width/PTM_RATIO,0));
+		groundBox.SetAsEdge(b2Vec2(screenSize.width * 2/PTM_RATIO,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width * 2/PTM_RATIO,0));
 		groundBody->CreateFixture(&groundBox,0);
         
         contactListener = new MyContactListener();
         world->SetContactListener(contactListener);
+        
+        // Add objects layer
+        objectsLayer = [[CCNode alloc] init];
+        [self addChild:objectsLayer];
+        
 		
         [self createAssortedShapes];
 		
@@ -141,10 +149,12 @@ enum {
 }
 
 -(void) createAssortedShapes{
-    int numShapes = 15;
+    int numShapes = 50;
     for (int i = 0; i < numShapes; i++){
         b2BodyDef bodyDef;
         bodyDef.type = b2_dynamicBody;
+        NSString *boxString  = @"box";
+        bodyDef.userData = boxString;
         
         // Define another box shape for our dynamic body.
         b2PolygonShape dynamicBox;
@@ -156,6 +166,8 @@ enum {
         fixtureDef.shape = &dynamicBox;	
         fixtureDef.density = 1.0f;
         fixtureDef.friction = 0.3f;
+        fixtureDef.restitution = 0.5f;
+        
         b2Body *body = world->CreateBody(&bodyDef);
         body->CreateFixture(&fixtureDef);
         
@@ -168,6 +180,8 @@ enum {
 	b2BodyDef bodyDef;
     b2Body *body;
 	bodyDef.type = b2_dynamicBody;
+    NSString *bombString = @"bomb";
+    bodyDef.userData = bombString;
     
     b2CircleShape circle;
     circle.m_radius = (CCRANDOM_0_1() * 5 + 10.0)/PTM_RATIO;
@@ -179,7 +193,9 @@ enum {
     fd.restitution = 0.5f;
     bodyDef.position.Set(p.x/PTM_RATIO, p.y/PTM_RATIO);
     body = world->CreateBody(&bodyDef);
-    thisBomb = body->CreateFixture(&fd);
+    body->CreateFixture(&fd);
+    
+    //[allBombs addObject:[NSValue valueWithPointer:bomb]];
 
 }
 
@@ -253,26 +269,38 @@ enum {
 
 	
 	//Iterate over the bodies in the physics world
+    /*
 	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
 	{
 		if (b->GetUserData() != NULL) {
 			
 		}	
-	}
+	}*/
+    
+    // Check for collisions
     std::vector<b2Body *>toDestroy;
     std::vector<MyContact>::iterator pos;
     for(pos = contactListener->_contacts.begin(); 
         pos != contactListener->_contacts.end(); ++pos) {
             MyContact contact = *pos;
         
-        if (contact.fixtureA == thisBomb || contact.fixtureB == thisBomb){
-            NSLog(@"Boom!");
-            b2Body *bombBody = thisBomb->GetBody();
-            [self launchBomb:bombBody->GetPosition()];
+        b2Body *bodyA = contact.fixtureA->GetBody();
+        b2Body *bodyB = contact.fixtureB->GetBody();
+        if (bodyA->GetUserData() != NULL && bodyB->GetUserData() != NULL) {
+            NSString *stringA = (NSString *) bodyA->GetUserData();
+            NSString *stringB = (NSString *) bodyB->GetUserData();
+           // NSLog(stringA, stringB);
+            if (stringA == @"bomb") {
+                b2Body *bombBody = bodyA;
+                [self launchBomb:bombBody->GetPosition()];
+                toDestroy.push_back(bombBody);
+            } 
             
-            //thisBomb = nil;
-            toDestroy.push_back(bombBody);
-            
+            if (stringB == @"bomb"){
+                b2Body *bombBody = bodyB;
+                [self launchBomb:bombBody->GetPosition()];
+                toDestroy.push_back(bombBody);
+            }
         }
     }
     
@@ -284,21 +312,27 @@ enum {
             [self removeChild:sprite cleanup:YES];
         }
         world->DestroyBody(b);
+        //thisBomb = NULL;
     }
 }
 
-- (void)ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	//Add a new body/atlas sprite at the touched location
+
+- (void)ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event{
+//- (void) recognizedTap:(UITapGestureRecognizer*)recognizer atLocation:(CGPoint)point {
+
 	for( UITouch *touch in touches ) {
 		CGPoint location = [touch locationInView: [touch view]];
 		
 		location = [[CCDirector sharedDirector] convertToGL: location];
 		
 		[self dropBomb: location];
+        
         //[self launchBomb:location];
-	}
+     }
+     
+    
 }
+
 
 - (void)accelerometer:(UIAccelerometer*)accelerometer didAccelerate:(UIAcceleration*)acceleration
 {	
@@ -318,6 +352,50 @@ enum {
 	b2Vec2 gravity( -accelY * 10, accelX * 10);
 	
 	world->SetGravity( gravity );
+}
+
+// Gesture stuff
+
+
+- (CGPoint) glPointForGestureRecognizer:(UIGestureRecognizer*)recognizer point:(CGPoint)point {
+	return [[CCDirector sharedDirector] convertToGL:ccp([[CCDirector sharedDirector] winSize].height - point.y, point.x)];
+}
+
+- (CGPoint) glPointForGestureRecognizer:(UIGestureRecognizer*)recognizer {
+	return [self glPointForGestureRecognizer:recognizer point:[recognizer locationInView:nil]];
+}
+
+	
+
+
+- (void) recognizedPan:(UIPanGestureRecognizer*)recognizer {
+	CGPoint point = [[CCDirector sharedDirector] convertToGL:[recognizer translationInView:recognizer.view]];
+	if (recognizer.state == UIGestureRecognizerStateBegan) {
+		panPoint = CGPointZero;
+	}
+	else if (recognizer.state == UIGestureRecognizerStateChanged) {
+		[objectsLayer setPosition:ccpAdd(objectsLayer.position, ccpSub(point, panPoint))];
+	}
+	panPoint = point;
+}
+
+- (void) recognizedPinch:(UIPinchGestureRecognizer*)recognizer {
+	CGPoint point = [[CCDirector sharedDirector] convertToGL:[recognizer locationInView:recognizer.view]];
+	
+	if (recognizer.state == UIGestureRecognizerStateBegan) {
+		originalZoom = objectsLayer.scale;
+	}
+	else if (recognizer.state == UIGestureRecognizerStateChanged) {
+		// Update scale and note difference from last zoom (for positioning)
+		zoom = clampf(originalZoom * recognizer.scale, 0.25, 3.0);
+		float zoomDiff = zoom / objectsLayer.scale;
+		objectsLayer.scale = zoom;
+		
+		// Update layer position so we zoom around the pinch center
+		CGPoint pos = objectsLayer.position;
+		CGPoint newPosition = ccp(pos.x - (point.x - pos.x)*(zoomDiff-1.0f), pos.y - (point.y - pos.y)*(zoomDiff-1.0f));
+		objectsLayer.position = newPosition;
+	}
 }
 
 // on "dealloc" you need to release all your retained objects
